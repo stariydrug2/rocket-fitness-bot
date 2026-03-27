@@ -41,7 +41,12 @@ def build_calendar(
             if current_day.month != month_first_day.month:
                 week_buttons.append(InlineKeyboardButton(text=" ", callback_data="noop"))
             elif current_day < min_date or current_day > max_date:
-                week_buttons.append(InlineKeyboardButton(text=f"·{current_day.day}", callback_data="noop"))
+                week_buttons.append(
+                    InlineKeyboardButton(
+                        text=f"·{current_day.day}",
+                        callback_data=f"date_locked:{current_day.isoformat()}",
+                    )
+                )
             elif current_day in available_dates:
                 week_buttons.append(
                     InlineKeyboardButton(
@@ -50,7 +55,12 @@ def build_calendar(
                     )
                 )
             else:
-                week_buttons.append(InlineKeyboardButton(text=f"×{current_day.day}", callback_data="noop"))
+                week_buttons.append(
+                    InlineKeyboardButton(
+                        text=f"×{current_day.day}",
+                        callback_data=f"date_unavailable:{current_day.isoformat()}",
+                    )
+                )
         rows.append(week_buttons)
 
     prev_month = (month_first_day.replace(day=1) - timedelta(days=1)).replace(day=1)
