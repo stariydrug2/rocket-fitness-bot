@@ -159,7 +159,7 @@ async def choose_service(callback: CallbackQuery, state: FSMContext, db: Databas
     await callback.answer()
 
 
-@router.callback_query(BookingStates.choosing_date, F.data.startswith("calnav:pickdate:"))
+@router.callback_query(F.data.startswith("calnav:pickdate:"))
 async def navigate_booking_calendar(callback: CallbackQuery, state: FSMContext, db: Database) -> None:
     month_str = callback.data.split(":", maxsplit=2)[2]
     month_date = parse_iso_date(month_str)
@@ -179,8 +179,13 @@ async def navigate_booking_calendar(callback: CallbackQuery, state: FSMContext, 
     await callback.answer()
 
 
-@router.callback_query(BookingStates.choosing_date, F.data.startswith("pickdate:"))
+@router.callback_query(F.data.startswith("pickdate:"))
 async def choose_date(callback: CallbackQuery, state: FSMContext, db: Database) -> None:
+    data = await state.get_data()
+    if "service_code" not in data:
+        await callback.answer("Сначала выберите услугу", show_alert=True)
+        return
+
     selected_date = callback.data.split(":", maxsplit=1)[1]
     slots = db.get_free_slots_for_date(selected_date)
     if not slots:
@@ -224,7 +229,7 @@ async def back_to_dates(callback: CallbackQuery, state: FSMContext, db: Database
     await callback.answer()
 
 
-@router.callback_query(BookingStates.choosing_time, F.data.startswith("pickslot:"))
+@router.callback_query(F.data.startswith("pickslot:"))
 async def choose_time(callback: CallbackQuery, state: FSMContext, db: Database) -> None:
     slot_id = int(callback.data.split(":", maxsplit=1)[1])
     slot = db.get_slot(slot_id)
@@ -391,6 +396,16 @@ async def cancel_own_booking(
         reply_markup=main_menu_kb(),
     )
     await callback.answer()
+
+
+@router.callback_query(F.data.startswith("date_unavailable:"))
+async def date_unavailable(callback: CallbackQuery) -> None:
+    await callback.answer("На эту дату пока нет свободных слотов", show_alert=True)
+
+
+@router.callback_query(F.data.startswith("date_locked:"))
+async def date_locked(callback: CallbackQuery) -> None:
+    await callback.answer("Эта дата недоступна для записи", show_alert=True)
 
 
 @router.callback_query(F.data == "noop")
